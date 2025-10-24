@@ -1,22 +1,19 @@
 {
-    "manifest_version": 3,
-    "name": "RecapSensei - Demo",
-    "version": "0.1.0",
-    "description": "Demo extension: on-device Recaps using Chrome built-in AI (Prompt API).",
-    "permissions": [
-        "activeTab",
-        "scripting"
-    ],
-    "host_permissions": [
-        "<all_urls>"
-    ],
-    "action": {
-        "default_popup": "popup.html"
-    },
-    "background": {
-        "service_worker": "sw.js"
-    },
-    "icons": {
-        "48": "icons/icon48.png"
+  "manifest_version": 3,
+  "name": "RecapSensei",
+  "version": "1.0",
+  "description": "Summarize anime screenshots and subtitles using Chrome's built-in AI.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon48.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon48.png"
     }
+  },
+  "permissions": ["activeTab", "scripting"],
+  "icons": {
+    "48": "icons/icon48.png"
+  }
 }
+
