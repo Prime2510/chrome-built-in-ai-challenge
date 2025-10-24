@@ -27,3 +27,42 @@ textarea {
 button {
     padding: 8px 12px;
 }
+
+/* Status message styles */
+#status {
+    margin-left: 12px;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.status-loading {
+    color: #2563eb;
+}
+
+.status-success {
+    color: #16a34a;
+}
+
+.status-error {
+    color: #dc2626;
+}
+
+.status-warning {
+    color: #d97706;
+}
+
+.status-ready {
+    color: #059669;
+}
+
+/* Image input styling */
+#imageInput {
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+/* Disabled button styling */
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
