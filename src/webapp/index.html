@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>RecapSensei — Web Demo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <main class="container">
+        <h1>RecapSensei — Web Demo</h1>
+        <p>Paste subtitles or upload an image and click Generate. Uses the same client-side Prompt API.
+        </p>
+        <input id="webImage" type="file" accept="image/*" />
+        <textarea id="webText" rows="6"></textarea>
+        <button id="webRun">Generate</button>
+        <pre id="webOut"></pre>
+    </main>
+    <script src="app.js"></script>
+</body>
+
+</html>
