@@ -1,0 +1,29 @@
+body {
+    font-family: system-ui, Segoe UI, Roboto, sans-serif;
+    margin: 12px
+}
+
+.container {
+    max-width: 520px
+}
+
+textarea {
+    width: 100%;
+    margin-top: 8px
+}
+
+.output {
+    white-space: pre-wrap;
+    background: #111;
+    color: #eee;
+    padding: 12px;
+    border-radius: 8px
+}
+
+.controls {
+    margin-top: 8px
+}
+
+button {
+    padding: 8px 12px;
+}

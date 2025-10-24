@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>RecapSensei — Demo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>RecapSensei (Demo)</h1>
+        <p>Drop an episode screenshot or paste subtitles to generate a short recap (local model).</p>
+
+
+        <input id="imageInput" type="file" accept="image/*" />
+        <textarea id="textInput" placeholder="Or paste subtitles here" rows="6"></textarea>
+
+
+        <div class="controls">
+            <button id="runBtn">Generate Recap</button>
+            <span id="status"></span>
+        </div>
+
+
+        <pre id="output" class="output"></pre>
+    </div>
+    <script src="popup.js"></script>
+</body>
+
+</html>
