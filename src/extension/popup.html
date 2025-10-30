@@ -15,11 +15,47 @@
         <h1>RecapSensei</h1>
         <span class="sparkle">✨</span>
       </div>
-      <p class="subtitle">AI-Powered Anime Episode Recapper</p>
+      <p class="subtitle">AI-Powered Episode Recapper</p>
     </header>
 
     <!-- Input Section -->
     <div id="inputSection" class="input-section">
+      <!-- Anime Info -->
+      <div class="anime-info-section">
+        <div class="info-group">
+          <label class="input-label">
+            <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+            Anime Name *
+          </label>
+          <input 
+            type="text" 
+            id="animeNameInput" 
+            placeholder="e.g., Jujutsu Kaisen, One Piece..."
+            class="text-input"
+          />
+        </div>
+        <div class="info-group">
+          <label class="input-label">
+            <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            Episode #
+          </label>
+          <input 
+            type="text" 
+            id="episodeNumberInput" 
+            placeholder="e.g., 24, S02E05..."
+            class="text-input"
+          />
+        </div>
+      </div>
+
       <!-- Image Upload -->
       <div class="upload-area" id="uploadArea">
         <input type="file" id="imageInput" accept="image/*" hidden>
@@ -29,7 +65,7 @@
             <polyline points="17 8 12 3 7 8"></polyline>
             <line x1="12" y1="3" x2="12" y2="15"></line>
           </svg>
-          <p class="upload-text">Drop screenshot here</p>
+          <p class="upload-text">Drop Key Screenshot</p>
           <p class="upload-subtext">or click to browse</p>
         </div>
         <div class="image-preview hidden" id="imagePreview">
@@ -46,13 +82,12 @@
             <polyline points="14 2 14 8 20 8"></polyline>
             <line x1="16" y1="13" x2="8" y2="13"></line>
             <line x1="16" y1="17" x2="8" y2="17"></line>
-            <polyline points="10 9 9 9 8 9"></polyline>
           </svg>
-          Episode Subtitles (Optional)
+          Episode Dialogue/Events (Optional)
         </label>
         <textarea 
           id="subtitleInput" 
-          placeholder="Paste episode subtitles or dialogue here...&#10;&#10;Example:&#10;'I won't give up! Not until I've protected everyone!'&#10;'You still don't understand... true strength comes from within.'"
+          placeholder="Paste episode dialogue, subtitles, or describe what happened...&#10;&#10;Example:&#10;'The hero finally confronted the villain. They revealed their past connection. A major character was injured in the battle. Episode ends with mysterious figure appearing.'"
           rows="5"
         ></textarea>
       </div>
@@ -62,7 +97,7 @@
         <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
         </svg>
-        Generate Recap
+        Generate Episode Recap
       </button>
     </div>
 
@@ -74,6 +109,11 @@
 
     <!-- Results Section -->
     <div id="resultsSection" class="results-section hidden">
+      <!-- Episode Title -->
+      <div class="episode-header">
+        <h2 id="episodeTitle" class="episode-title"></h2>
+      </div>
+
       <!-- Summary Card -->
       <div class="result-card">
         <div class="card-header">
@@ -82,34 +122,42 @@
         <p id="summaryText" class="summary-text"></p>
       </div>
 
+      <!-- Key Moments Card -->
+      <div class="result-card">
+        <div class="card-header">
+          <h3>⚡ Key Moments</h3>
+        </div>
+        <div id="keyMoments" class="key-moments-list"></div>
+      </div>
+
       <!-- Characters Card -->
       <div class="result-card">
         <div class="card-header">
-          <h3>👥 Key Characters</h3>
+          <h3>👥 Character Actions</h3>
         </div>
         <div id="charactersList" class="characters-list"></div>
       </div>
 
-      <!-- Tags & Mood Card -->
-      <div class="tags-container">
-        <div class="result-card">
-          <div class="card-header">
-            <h3>🏷️ Tags</h3>
-          </div>
-          <div id="tagsList" class="tags-list"></div>
+      <!-- Plot Progress Card -->
+      <div class="result-card">
+        <div class="card-header">
+          <h3>📈 Story Progression</h3>
         </div>
-        <div class="result-card">
-          <div class="card-header">
-            <h3>🎭 Mood</h3>
-          </div>
-          <div id="moodList" class="tags-list"></div>
+        <p id="plotProgress" class="plot-text"></p>
+      </div>
+
+      <!-- Cliffhanger Card -->
+      <div class="result-card">
+        <div class="card-header">
+          <h3>🔥 Cliffhanger</h3>
         </div>
+        <p id="cliffhanger" class="cliffhanger-text"></p>
       </div>
 
       <!-- Blurb Card -->
       <div class="result-card blurb-card">
         <div class="card-header">
-          <h3>🐦 Shareable Blurb</h3>
+          <h3>🐦 Share This Episode</h3>
         </div>
         <p id="blurbText" class="blurb-text"></p>
         <div class="action-buttons">
@@ -130,12 +178,20 @@
             </svg>
             Share
           </button>
+          <button id="saveBtn" class="action-btn save-btn">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            Save
+          </button>
         </div>
       </div>
 
       <!-- Reset Button -->
       <button id="resetBtn" class="reset-btn">
-        ← New Recap
+        ← Recap Another Episode
       </button>
     </div>
   </div>

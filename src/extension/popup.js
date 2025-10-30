@@ -1,5 +1,5 @@
 // ====================================
-// RecapSensei - Main Popup Logic
+// RecapSensei - Anime Episode Recapper
 // Chrome 144+ Built-in AI (Global Constructors)
 // ====================================
 
@@ -7,8 +7,11 @@ class RecapSensei {
   constructor() {
     this.imageFile = null;
     this.imageDataURL = null;
+    this.currentAnime = null;
+    this.currentEpisode = null;
     this.initializeElements();
     this.attachEventListeners();
+    this.loadSavedRecaps();
   }
 
   initializeElements() {
@@ -20,6 +23,8 @@ class RecapSensei {
     this.previewImg = document.getElementById('previewImg');
     this.removeImageBtn = document.getElementById('removeImage');
     this.subtitleInput = document.getElementById('subtitleInput');
+    this.animeNameInput = document.getElementById('animeNameInput');
+    this.episodeNumberInput = document.getElementById('episodeNumberInput');
     this.generateBtn = document.getElementById('generateBtn');
 
     // Section elements
@@ -29,13 +34,16 @@ class RecapSensei {
     this.statusText = document.getElementById('statusText');
 
     // Result elements
+    this.episodeTitle = document.getElementById('episodeTitle');
     this.summaryText = document.getElementById('summaryText');
+    this.keyMoments = document.getElementById('keyMoments');
     this.charactersList = document.getElementById('charactersList');
-    this.tagsList = document.getElementById('tagsList');
-    this.moodList = document.getElementById('moodList');
+    this.plotProgress = document.getElementById('plotProgress');
+    this.cliffhanger = document.getElementById('cliffhanger');
     this.blurbText = document.getElementById('blurbText');
     this.copyBtn = document.getElementById('copyBtn');
     this.shareBtn = document.getElementById('shareBtn');
+    this.saveBtn = document.getElementById('saveBtn');
     this.resetBtn = document.getElementById('resetBtn');
   }
 
@@ -55,7 +63,33 @@ class RecapSensei {
     // Action buttons
     this.copyBtn.addEventListener('click', () => this.copyBlurb());
     this.shareBtn.addEventListener('click', () => this.shareBlurb());
+    this.saveBtn.addEventListener('click', () => this.saveRecap());
     this.resetBtn.addEventListener('click', () => this.reset());
+  }
+
+  // ====================================
+  // Storage Management
+  // ====================================
+
+  loadSavedRecaps() {
+    const saved = localStorage.getItem('recapsensei_recaps');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    return [];
+  }
+
+  saveRecapToStorage(recapData) {
+    const recaps = this.loadSavedRecaps();
+    recaps.unshift({
+      ...recapData,
+      timestamp: Date.now(),
+      anime: this.currentAnime,
+      episode: this.currentEpisode
+    });
+    // Keep only last 50 recaps
+    if (recaps.length > 50) recaps.pop();
+    localStorage.setItem('recapsensei_recaps', JSON.stringify(recaps));
   }
 
   // ====================================
@@ -111,32 +145,36 @@ class RecapSensei {
 
   async generateRecap() {
     const subtitles = this.subtitleInput.value.trim();
+    this.currentAnime = this.animeNameInput.value.trim();
+    this.currentEpisode = this.episodeNumberInput.value.trim();
 
     if (!this.imageFile && !subtitles) {
       alert('Please provide at least a screenshot or subtitles!');
       return;
     }
 
-    try {
-      // Show loading
-      this.showLoading();
+    if (!this.currentAnime) {
+      alert('Please enter the anime name!');
+      return;
+    }
 
-      // Check AI availability
+    try {
+      this.showLoading();
       await this.checkAIAvailability();
 
       // Process subtitles if needed
       let processedSubtitles = subtitles;
-      if (subtitles && subtitles.length > 200) {
-        this.updateStatus('Summarizing subtitles...');
+      if (subtitles && subtitles.length > 300) {
+        this.updateStatus('Condensing dialogue...');
         processedSubtitles = await this.summarizeText(subtitles);
       }
 
-      // Generate recap
-      this.updateStatus('Analyzing content...');
-      const recapData = await this.generateRecapWithAI(processedSubtitles);
+      // Generate episode recap
+      this.updateStatus('Analyzing episode content...');
+      const recapData = await this.generateEpisodeRecap(processedSubtitles);
 
-      // Generate blurb
-      this.updateStatus('Creating shareable blurb...');
+      // Generate shareable blurb
+      this.updateStatus('Creating shareable summary...');
       const blurb = await this.generateBlurb(recapData);
 
       // Show results
@@ -152,13 +190,11 @@ class RecapSensei {
   async checkAIAvailability() {
     this.updateStatus('Checking AI availability...');
 
-    // Check if LanguageModel constructor exists (Chrome 144+)
     if (typeof LanguageModel === 'undefined') {
-      throw new Error('Chrome Built-in AI is not available. Please ensure you have Chrome 127+ with Prompt API enabled at chrome://flags (#optimization-guide-on-device-model and #prompt-api-for-gemini-nano)');
+      throw new Error('Chrome Built-in AI is not available. Please ensure you have Chrome 127+ with Prompt API enabled at chrome://flags');
     }
 
     try {
-      // Test if we can create a session
       const testSession = await LanguageModel.create({ outputLanguage: 'en' });
       await testSession.destroy();
       this.updateStatus('AI ready!');
@@ -172,67 +208,69 @@ class RecapSensei {
 
   async summarizeText(text) {
     try {
-      // Check if Summarizer API exists
-      if (typeof Summarizer === 'undefined') {
-        console.log('Summarizer API not available, using LanguageModel fallback');
-        return await this.summarizeWithLanguageModel(text);
+      if (typeof Summarizer !== 'undefined') {
+        const summarizer = await Summarizer.create({
+          type: 'key-points',
+          length: 'medium',
+          format: 'plain-text',
+          outputLanguage: 'en'
+        });
+        const summary = await summarizer.summarize(text);
+        await summarizer.destroy();
+        return summary;
       }
-
-      const summarizer = await Summarizer.create({
-        type: 'tl;dr',
-        length: 'short',
-        format: 'plain-text',
-        outputLanguage: 'en'
-      });
-
-      const summary = await summarizer.summarize(text);
-      await summarizer.destroy();
-      return summary;
-
     } catch (error) {
       console.warn('Summarizer failed, using LanguageModel:', error);
-      return await this.summarizeWithLanguageModel(text);
     }
-  }
 
-  async summarizeWithLanguageModel(text) {
     const session = await LanguageModel.create({ outputLanguage: 'en' });
-    const summary = await session.prompt(`Summarize this dialogue in 2-3 sentences:\n\n${text}`);
+    const summary = await session.prompt(`Extract the key dialogue and events from this episode transcript, keeping important plot points:\n\n${text}`);
     await session.destroy();
     return summary;
   }
 
-  async generateRecapWithAI(subtitles) {
+  async generateEpisodeRecap(subtitles) {
     const session = await LanguageModel.create({ outputLanguage: 'en' });
 
-    const prompt = `You are RecapSensei, an anime episode analyzer. Based on the provided content, generate a detailed recap in JSON format.
+    const prompt = `You are RecapSensei, an anime episode recap specialist. Generate a comprehensive episode recap for anime viewers.
 
-${this.imageFile ? `Screenshot: ${this.imageFile.name}` : 'No screenshot provided'}
-${subtitles ? `Dialogue/Subtitles:\n${subtitles}` : 'No subtitles provided'}
+ANIME: ${this.currentAnime}
+EPISODE: ${this.currentEpisode || 'Unknown'}
+${this.imageFile ? `SCREENSHOT: Provided (${this.imageFile.name})` : 'NO SCREENSHOT'}
+${subtitles ? `DIALOGUE/EVENTS:\n${subtitles}` : 'NO DIALOGUE PROVIDED'}
 
-Generate a JSON response with this EXACT structure:
+Create a detailed episode recap in JSON format with this structure:
 {
-  "summary": "A detailed 2-3 sentence summary of the scene/episode",
-  "characters": [
-    {"name": "Character Name", "role": "What they're doing in this scene"}
+  "episodeTitle": "A catchy title for this episode based on events",
+  "summary": "2-3 sentence overview of what happened this episode",
+  "keyMoments": [
+    "First major event or revelation",
+    "Second major event or revelation",
+    "Third major event or revelation"
   ],
-  "tags": ["Tag1", "Tag2", "Tag3", "Tag4"],
-  "mood": ["Mood1", "Mood2", "Mood3"]
+  "characters": [
+    {"name": "Character Name", "action": "What they did this episode"},
+    {"name": "Character Name", "action": "What they did this episode"}
+  ],
+  "plotProgress": "How did the main story arc advance? What changed?",
+  "cliffhanger": "What question/tension will carry to next episode? Or 'None' if episode wrapped up"
 }
 
-Guidelines:
-- Summary should capture the key events and emotions
-- List 2-4 main characters with their roles
-- Tags should include themes, plot points, or genres (e.g., "Betrayal", "Action", "Romance")
-- Mood should be 2-3 adjectives (e.g., "Tense", "Hopeful", "Dramatic")
-- Output ONLY valid JSON, no additional text`;
+IMPORTANT GUIDELINES:
+- This is an EPISODE RECAP, not a scene description
+- Focus on STORY PROGRESSION and PLOT DEVELOPMENTS
+- Include character actions that MATTER to the story
+- Highlight TWISTS, REVELATIONS, or IMPORTANT DECISIONS
+- Key moments should be story beats, not visual descriptions
+- Think like you're explaining to someone who missed the episode
+- Be specific about what happened, not just what was shown
+
+Output ONLY valid JSON.`;
 
     const response = await session.prompt(prompt);
     await session.destroy();
 
-    // Parse JSON from response
     try {
-      // Try to extract JSON if there's extra text
       const jsonMatch = response.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         return JSON.parse(jsonMatch[0]);
@@ -240,47 +278,40 @@ Guidelines:
       return JSON.parse(response);
     } catch (error) {
       console.error('Failed to parse AI response:', response);
-      // Return a fallback structure
       return {
+        episodeTitle: "Episode Recap",
         summary: response.substring(0, 200) + '...',
-        characters: [{ name: 'Unknown', role: 'Main character' }],
-        tags: ['Episode Recap'],
-        mood: ['Dramatic']
+        keyMoments: ["Unable to extract key moments"],
+        characters: [{ name: 'Unknown', action: 'Appeared in episode' }],
+        plotProgress: "Unable to analyze plot progression",
+        cliffhanger: "None"
       };
     }
   }
 
   async generateBlurb(recapData) {
     try {
-      // Check if Writer API exists
-      if (typeof Writer === 'undefined') {
-        console.log('Writer API not available, using LanguageModel fallback');
-        return this.generateBlurbWithLanguageModel(recapData);
+      if (typeof Writer !== 'undefined') {
+        const writer = await Writer.create({
+          tone: 'casual',
+          length: 'short',
+          outputLanguage: 'en'
+        });
+
+        const blurb = await writer.write(
+          `Create an exciting tweet (under 280 chars) about this anime episode. Anime: ${this.currentAnime} Ep${this.currentEpisode}. Summary: ${recapData.summary}. Make it spoiler-free but intriguing! Add 1-2 emojis.`
+        );
+        
+        await writer.destroy();
+        return blurb;
       }
-
-      const writer = await Writer.create({
-        tone: 'casual',
-        length: 'short',
-        outputLanguage: 'en'
-      });
-
-      const blurb = await writer.write(
-        `Create a tweet-length blurb (under 280 characters) for this anime scene: ${recapData.summary}. Make it engaging and include relevant emojis.`
-      );
-      
-      await writer.destroy();
-      return blurb;
-
     } catch (error) {
       console.warn('Writer failed, using LanguageModel:', error);
-      return this.generateBlurbWithLanguageModel(recapData);
     }
-  }
 
-  async generateBlurbWithLanguageModel(recapData) {
     const session = await LanguageModel.create({ outputLanguage: 'en' });
     const blurb = await session.prompt(
-      `Create a tweet-length blurb (under 280 characters) for this anime scene: ${recapData.summary}. Make it engaging and include 1-2 relevant emojis. Output only the blurb text.`
+      `Create a spoiler-free, exciting tweet (under 280 characters) about ${this.currentAnime} Episode ${this.currentEpisode}. Summary: ${recapData.summary}. Make it hype! Add 1-2 emojis. Output only the tweet text.`
     );
     await session.destroy();
     return blurb.trim();
@@ -313,8 +344,23 @@ Guidelines:
   }
 
   displayResults(data) {
+    // Episode title
+    this.episodeTitle.textContent = `${this.currentAnime} - Episode ${this.currentEpisode || '?'}: ${data.episodeTitle}`;
+
     // Summary
     this.summaryText.textContent = data.summary;
+
+    // Key moments
+    this.keyMoments.innerHTML = '';
+    data.keyMoments.forEach((moment, idx) => {
+      const momentDiv = document.createElement('div');
+      momentDiv.className = 'key-moment-item';
+      momentDiv.innerHTML = `
+        <span class="moment-number">${idx + 1}</span>
+        <span class="moment-text">${moment}</span>
+      `;
+      this.keyMoments.appendChild(momentDiv);
+    });
 
     // Characters
     this.charactersList.innerHTML = '';
@@ -323,31 +369,22 @@ Guidelines:
       charDiv.className = 'character-item';
       charDiv.innerHTML = `
         <div class="character-name">${char.name}</div>
-        <div class="character-role">${char.role}</div>
+        <div class="character-role">${char.action}</div>
       `;
       this.charactersList.appendChild(charDiv);
     });
 
-    // Tags
-    this.tagsList.innerHTML = '';
-    data.tags.forEach(tag => {
-      const tagSpan = document.createElement('span');
-      tagSpan.className = 'tag';
-      tagSpan.textContent = tag;
-      this.tagsList.appendChild(tagSpan);
-    });
+    // Plot progress
+    this.plotProgress.textContent = data.plotProgress;
 
-    // Mood
-    this.moodList.innerHTML = '';
-    data.mood.forEach(mood => {
-      const moodSpan = document.createElement('span');
-      moodSpan.className = 'tag';
-      moodSpan.textContent = mood;
-      this.moodList.appendChild(moodSpan);
-    });
+    // Cliffhanger
+    this.cliffhanger.textContent = data.cliffhanger;
 
     // Blurb
     this.blurbText.textContent = data.blurb;
+
+    // Store for saving
+    this.currentRecapData = data;
 
     this.showResults();
   }
@@ -362,7 +399,6 @@ Guidelines:
     try {
       await navigator.clipboard.writeText(blurbText);
       
-      // Visual feedback
       this.copyBtn.classList.add('copied');
       const originalHTML = this.copyBtn.innerHTML;
       this.copyBtn.innerHTML = `
@@ -388,18 +424,38 @@ Guidelines:
     if (navigator.share) {
       navigator.share({
         text: blurbText,
-        title: 'RecapSensei - Episode Recap'
+        title: `${this.currentAnime} - Episode ${this.currentEpisode}`
       }).catch(err => console.log('Share cancelled:', err));
     } else {
-      // Fallback: open Twitter intent
       const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(blurbText)}`;
       chrome.tabs.create({ url: tweetUrl });
+    }
+  }
+
+  saveRecap() {
+    if (this.currentRecapData) {
+      this.saveRecapToStorage(this.currentRecapData);
+      
+      this.saveBtn.classList.add('saved');
+      const originalHTML = this.saveBtn.innerHTML;
+      this.saveBtn.innerHTML = `
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        Saved!
+      `;
+
+      setTimeout(() => {
+        this.saveBtn.classList.remove('saved');
+        this.saveBtn.innerHTML = originalHTML;
+      }, 2000);
     }
   }
 
   reset() {
     this.removeImage();
     this.subtitleInput.value = '';
+    this.currentRecapData = null;
     this.showInput();
   }
 }
