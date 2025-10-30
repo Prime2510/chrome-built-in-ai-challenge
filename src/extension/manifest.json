@@ -2,18 +2,25 @@
   "manifest_version": 3,
   "name": "RecapSensei",
   "version": "1.0",
-  "description": "Summarize anime screenshots and subtitles using Chrome's built-in AI.",
+  "description": "AI-powered anime episode recapper using Chrome's built-in multimodal AI. Upload screenshots and subtitles for instant summaries.",
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
-      "16": "icons/icon48.png",
+      "16": "icons/icon16.png",
       "48": "icons/icon48.png",
-      "128": "icons/icon48.png"
+      "128": "icons/icon128.png"
     }
   },
-  "permissions": ["activeTab", "scripting"],
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
   "icons": {
-    "48": "icons/icon48.png"
-  }
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "host_permissions": [
+    "<all_urls>"
+  ]
 }
-
