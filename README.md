@@ -212,7 +212,6 @@ MIT License - Feel free to use and modify!
 
 ## 🙏 Acknowledgments
 
-- Built for Chrome's Built-in AI Challenge
 - Powered by Gemini Nano on-device model
 - Inspired by the anime community's love for sharing moments
 
